@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+VENV="$ROOT/.venv/bin"
+
+run() {
+    echo ">>> $1"
+    shift
+    if ! "$@"; then
+        echo "FAILED: $1 — commit blocked." >&2
+        exit 1
+    fi
+}
+
+run "ruff check"  "$VENV/ruff"  check "$ROOT"
+run "mypy"        "$VENV/mypy"  "$ROOT/ex_pipeline.py" "$ROOT/test_pipeline.py"
+run "pytest"      "$VENV/pytest" -q "$ROOT"
