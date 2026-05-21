@@ -75,3 +75,33 @@ def test_divide_by_zero() -> None:
 def test_divide_by_float_zero() -> None:
     with pytest.raises(ZeroDivisionError, match="division by zero"):
         divide(1, 0.0)
+
+
+def test_divide_error_message_contains_operands() -> None:
+    with pytest.raises(ZeroDivisionError, match=r"3 / 0"):
+        divide(3, 0)
+
+
+def test_divide_nan_divisor() -> None:
+    with pytest.raises(ValueError, match="divisor must be a finite number"):
+        divide(1.0, float("nan"))
+
+
+def test_divide_inf_divisor() -> None:
+    with pytest.raises(ValueError, match="divisor must be a finite number"):
+        divide(1.0, float("inf"))
+
+
+def test_divide_nan_dividend() -> None:
+    with pytest.raises(ValueError, match="dividend must be a finite number"):
+        divide(float("nan"), 1.0)
+
+
+def test_divide_overflow() -> None:
+    with pytest.raises(OverflowError, match="overflows to infinity"):
+        divide(1e308, 1e-308)
+
+
+def test_divide_bool_inputs() -> None:
+    with pytest.raises(TypeError, match="bool"):
+        divide(True, False)
