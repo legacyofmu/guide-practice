@@ -1,0 +1,63 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get diff
+        id: diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD -- '*.py' > diff.txt
+          echo "diff_size=$(wc -c < diff.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Claude review
+        if: steps.diff.outputs.diff_size > 0
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          pip -q install anthropic
+
+          python - <<'PYEOF'
+          import os, anthropic
+
+          diff = open("diff.txt").read()[:12000]  # stay within token budget
+
+          client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+          msg = client.messages.create(
+              model="claude-sonnet-4-6",
+              max_tokens=1024,
+              messages=[{
+                  "role": "user",
+                  "content": (
+                      "You are a code reviewer. Review the following Python diff and "
+                      "give concise, actionable feedback in Korean. "
+                      "Focus on: correctness, type safety, test coverage, edge cases. "
+                      "Format as bullet points.\n\n```diff\n" + diff + "\n```"
+                  ),
+              }],
+          )
+          review = msg.content[0].text
+
+          import subprocess, json
+          body = f"## 🤖 Claude 자동 코드 리뷰\n\n{review}"
+          subprocess.run([
+              "gh", "pr", "comment", os.environ["PR_NUMBER"],
+              "--repo", os.environ["REPO"],
+              "--body", body,
+          ], check=True)
+          PYEOF
