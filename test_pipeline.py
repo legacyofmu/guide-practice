@@ -8,7 +8,7 @@ def test_add_integers() -> None:
 
 
 def test_add_floats() -> None:
-    assert add(1.5, 2.5) == 4.0
+    assert add(1.5, 2.5) == pytest.approx(4.0)
 
 
 def test_add_negative() -> None:
@@ -27,6 +27,14 @@ def test_subtract_negative_result() -> None:
     assert subtract(3, 10) == -7
 
 
+def test_subtract_floats() -> None:
+    assert subtract(1.5, 0.5) == pytest.approx(1.0)
+
+
+def test_subtract_double_negative() -> None:
+    assert subtract(-5, -3) == -2
+
+
 def test_multiply() -> None:
     assert multiply(4, 5) == 20
 
@@ -35,16 +43,24 @@ def test_multiply_by_zero() -> None:
     assert multiply(99, 0) == 0
 
 
+def test_multiply_negative() -> None:
+    assert multiply(-3, 4) == -12
+
+
+def test_multiply_floats() -> None:
+    assert multiply(1.5, 2.0) == pytest.approx(3.0)
+
+
 def test_divide() -> None:
-    assert divide(10, 2) == 5.0
+    assert divide(10, 2) == pytest.approx(5.0)
 
 
 def test_divide_float_result() -> None:
     assert divide(7, 2) == pytest.approx(3.5)
 
 
-def test_multiply_negative() -> None:
-    assert multiply(-3, 4) == -12
+def test_divide_zero_numerator() -> None:
+    assert divide(0, 5) == pytest.approx(0.0)
 
 
 def test_divide_negative() -> None:
@@ -52,5 +68,10 @@ def test_divide_negative() -> None:
 
 
 def test_divide_by_zero() -> None:
-    with pytest.raises(ValueError, match="division by zero"):
+    with pytest.raises(ZeroDivisionError, match="division by zero"):
         divide(1, 0)
+
+
+def test_divide_by_float_zero() -> None:
+    with pytest.raises(ZeroDivisionError, match="division by zero"):
+        divide(1, 0.0)
